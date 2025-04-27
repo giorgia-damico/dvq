@@ -12,9 +12,42 @@ from src.dvq.statistical import (
     kl_divergence
 )
 
+from src.dvq.functional import (
+    repeat_onset_positions_multiprocess
+)
+
 
 # %%
 def main():
+
+    # Repeat detection test
+    seqs = [
+        "ACGTACGTACGTACGTACGT",
+        "AAAAGGGGCCCC",
+        "ATCGATCGATCGATCGATCG",
+        "AGCTTTCGAAGCTTTCGAAGCTTTCGAA",
+        "CGTAGCTAGCTAGCTAGCTA",
+        "TTGACGTCGTAGCTAGCTAAGT",
+    ]
+
+    n = 4
+    min_repeats = 2
+    num_cores = 4
+
+    print("Running repeat onset detection...\n")
+    onset_positions = repeat_onset_positions_multiprocess(
+        seqs,
+        n=n,
+        min_repeats=min_repeats,
+        num_cores=num_cores
+    )
+
+    print("\nResults:")
+    for idx, (seq, onset) in enumerate(zip(seqs, onset_positions)):
+        print(f"Sequence {idx}: Start = {onset if onset is not None else 'No repeat detected'}")
+
+
+    # tests for Statistical module 
     # Example sequences
     seq_1 = "ACGT" * 1000
     seq_2 = "GCTA" * 1000
