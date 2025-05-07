@@ -13,14 +13,16 @@ from src.dvq.statistical import (
 )
 
 from src.dvq.functional import (
-    repeat_onset_positions_multiprocess
+        repeat_onset_positions_multiprocess,
+        DNARepeatDetector,
+        variable_tandem_repeats_multiprocess,
 )
 
 
 # %%
 def main():
 
-    # Repeat detection test
+    # Test sequences
     seqs = [
         "ACGTACGTACGTACGTACGT",
         "AAAAGGGGCCCC",
@@ -42,10 +44,29 @@ def main():
         num_cores=num_cores
     )
 
-    print("\nResults:")
+    print("\n Repeat Onset Results:")
     for idx, (seq, onset) in enumerate(zip(seqs, onset_positions)):
         print(f"Sequence {idx}: Start = {onset if onset is not None else 'No repeat detected'}")
 
+    # Fixed-length tandem repeat detection
+    print("\n Fixed-length Tandem Repeat Detection:")
+    detector = DNARepeatDetector(n=n, min_repeats=min_repeats)
+    for idx, seq in enumerate(seqs):
+        results = detector.detect_tandem_repeats(seq)
+        print(f"Sequence {idx}: {results if results else 'No tandem repeats'}")
+
+    # Variable-length tandem repeat detection
+    print("\n Variable-length Tandem Repeat Detection (motif length 2–6):")
+    variable_results = variable_tandem_repeats_multiprocess(
+        seqs,
+        min_n=2,
+        max_n=6,
+        min_repeats=min_repeats,
+        num_cores=num_cores
+    )
+
+    for idx, result in enumerate(variable_results):
+        print(f"Sequence {idx}: {result if result else 'No variable tandem repeats'}")
 
     # tests for Statistical module 
     # Example sequences

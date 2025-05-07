@@ -3,13 +3,17 @@ from typing import List, Tuple, Union
 from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
 
+# --- Repeat Detector Class ---
 class DNARepeatDetector:
     """
-    n: n_gram length 
-    min_repeats: minimum times a substring needs to appear to be counted as a repeat
+    A detector for fixed-length and tandem DNA repeats.
+
+    Attributes:
+        n (int): Length of the n-gram to look for.
+        min_repeats (int): Minimum number of times a substring must appear to count as a repeat.
     """
     def __init__(self, n: int = 5, min_repeats: int = 2):
-        self.n = n 
+        self.n = n
         self.min_repeats = min_repeats
 
     def detect_repeats(
@@ -18,13 +22,11 @@ class DNARepeatDetector:
         return_earliest: bool = False
     ) -> Union[List[Tuple[str, List[int]]], Tuple[str, List[int]], None]:
         """
-        Detect repeated sub-sequences in a given sequence using a sliding window. 
+        Detect fixed-length repeated subsequences.
 
-        Return: 
-        List of (n_gram, positions in the seq it appears)
+        Returns a list of (substring, [positions]) or the earliest repeat if return_earliest is True.
         """
         ngrams = defaultdict(list)
-
         for i in range(len(sequence) - self.n + 1):
             ngram = sequence[i:i + self.n]
             ngrams[ngram].append(i)
@@ -35,51 +37,76 @@ class DNARepeatDetector:
         if return_earliest:
             return None
 
-        return [(ngram, positions) for ngram, positions in ngrams.items() if len(positions) >= self.min_repeats]
-
+        return [(ngram, pos) for ngram, pos in ngrams.items() if len(pos) >= self.min_repeats]
 
     def detect_tandem_repeats(self, sequence: str) -> List[Tuple[str, int, int]]:
         """
-        Detect tandem repeats in a sequence.
-        
-        Returns:
-        List of (repeat_unit, start_position, number_of_repeats)
+        Detect fixed-length tandem repeats in a sequence.
+
+        Returns a list of (repeat_unit, start_index, repeat_count).
         """
         results = []
         seq_len = len(sequence)
-        
         i = 0
         while i < seq_len - self.n + 1:
-            repeat_unit = sequence[i:i+self.n]
+            repeat_unit = sequence[i:i + self.n]
             count = 1
             j = i + self.n
-            while j <= seq_len - self.n and sequence[j:j+self.n] == repeat_unit:
+            while j <= seq_len - self.n and sequence[j:j + self.n] == repeat_unit:
                 count += 1
                 j += self.n
-            
+
             if count >= self.min_repeats:
                 results.append((repeat_unit, i, count))
-                i = j  # Skip past this whole repeat block
+                i = j
             else:
-                i += 1  # Move one position forward
-        
+                i += 1
         return results
 
+# --- Helper Function for Variable Tandem Repeats (top-level for multiprocessing) ---
+def detect_variable_tandem_repeats(
+    sequence: str,
+    min_n: int = 2,
+    max_n: int = 6,
+    min_repeats: int = 2
+) -> List[Tuple[str, int, int]]:
+    """
+    Detect tandem repeats of variable motif lengths.
 
-# --- Batch processing functions ---
+    Returns list of (repeat_unit, start_index, repeat_count)
+    """
+    results = []
+    seq_len = len(sequence)
+    for n in range(min_n, max_n + 1):
+        i = 0
+        while i < seq_len - n + 1:
+            unit = sequence[i:i + n]
+            count = 1
+            j = i + n
+            while j <= seq_len - n and sequence[j:j + n] == unit:
+                count += 1
+                j += n
 
+            if count >= min_repeats:
+                results.append((unit, i, count))
+                i = j
+            else:
+                i += 1
+    return results
+
+# --- Top-Level Worker for Multiprocessing ---
+def variable_tandem_worker(args):
+    seq, min_n, max_n, min_repeats = args
+    return detect_variable_tandem_repeats(seq, min_n, max_n, min_repeats)
+
+# --- Batch/Multiprocess Wrappers ---
 def detect_earliest_repeat_position(seq: str, n: int = 5, min_repeats: int = 2) -> Union[int, None]:
-    """
-    Returns the position where the first repeat starts, or None.
-
-    """
     detector = DNARepeatDetector(n=n, min_repeats=min_repeats)
     result = detector.detect_repeats(seq, return_earliest=True)
     if result:
         _, positions = result
-        return positions[1]  # Position where repeat begins
+        return positions[1]
     return None
-
 
 def repeat_onset_positions_multiprocess(
     seqs: List[str],
@@ -87,12 +114,17 @@ def repeat_onset_positions_multiprocess(
     min_repeats: int = 2,
     num_cores: int = cpu_count()
 ) -> List[Union[int, None]]:
-    """
-    Detects the earliest repeat onset position for a list of sequences using multiprocessing.
-    """
     args = [(seq, n, min_repeats) for seq in seqs]
-
     with Pool(num_cores) as pool:
-        positions = list(tqdm(pool.starmap(detect_earliest_repeat_position, args), total=len(seqs)))
-    
-    return positions
+        return list(tqdm(pool.starmap(detect_earliest_repeat_position, args), total=len(seqs)))
+
+def variable_tandem_repeats_multiprocess(
+    seqs: List[str],
+    min_n: int = 2,
+    max_n: int = 6,
+    min_repeats: int = 2,
+    num_cores: int = cpu_count()
+) -> List[List[Tuple[str, int, int]]]:
+    args = [(seq, min_n, max_n, min_repeats) for seq in seqs]
+    with Pool(num_cores) as pool:
+        return list(tqdm(pool.map(variable_tandem_worker, args), total=len(seqs)))
