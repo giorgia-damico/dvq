@@ -45,3 +45,81 @@ statistical.similarity_wen([seqs_1, seqs_2])
 # 0.99
 
 ```
+
+
+
+
+# Docs
+## Funtional
+
+This module provides utilities for detecting repeat patterns in DNA sequences, including fixed-length n-gram repeats and tandem repeats of both fixed and variable length.
+
+### Features
+
+- Detect earliest repeated n-grams
+- Detect fixed-length tandem repeats
+- Detect variable-length tandem repeats (motif discovery)
+- Batch/multiprocessing support
+
+### Classes & Functions
+
+### `DNARepeatDetector`
+
+```python
+detector = DNARepeatDetector(n=4, min_repeats=2)
+```
+
+#### `.detect_repeats(sequence, return_earliest=False)`
+- Returns list of repeated n-grams and their positions.
+- If `return_earliest=True`, returns the first repeated n-gram and its first two positions.
+
+#### `.detect_tandem_repeats(sequence)`
+- Detects adjacent (tandem) repeats of fixed-length `n`.
+
+### `detect_variable_tandem_repeats(sequence, min_n=2, max_n=6)`
+- Finds tandem repeats with motif lengths between `min_n` and `max_n`.
+
+---
+
+#### Multiprocessing Tools
+
+All tools use `multiprocessing.Pool` for performance.
+
+##### `repeat_onset_positions_multiprocess(seqs, n, min_repeats, num_cores)`
+- Returns earliest repeat onset positions per sequence.
+
+##### `tandem_repeats_multiprocess(seqs, n, min_repeats, num_cores)`
+- Returns list of tandem repeats for each sequence.
+
+##### `variable_tandem_repeats_multiprocess(seqs, min_n, max_n, min_repeats, num_cores)`
+- Returns variable-length tandem repeats for each sequence.
+
+---
+
+### Example
+
+```python
+from functional.repeat_analysis import (
+    repeat_onset_positions_multiprocess,
+    tandem_repeats_multiprocess,
+    variable_tandem_repeats_multiprocess
+)
+
+seqs = ["ACGTACGTACGT", "ATCGATCGATCG", "AGCTTTCGAAGCTTTCGAA"]
+
+onsets = repeat_onset_positions_multiprocess(seqs, n=4, min_repeats=2)
+tandems = tandem_repeats_multiprocess(seqs, n=4, min_repeats=2)
+variable = variable_tandem_repeats_multiprocess(seqs, min_n=2, max_n=6, min_repeats=2)
+
+print(onsets)
+print(tandems)
+print(variable)
+```
+
+---
+
+### Notes
+
+- Designed for biological sequence analysis and model evaluation.
+- Place this module in `src/functional/` and import as needed in larger packages.
+
