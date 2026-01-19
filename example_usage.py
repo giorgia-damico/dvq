@@ -12,9 +12,29 @@ from src.dvq.statistical import (
     kl_divergence
 )
 
+from src.dvq.functional import (
+        find_genomic_repeats
+
+)
+
 
 # %%
 def main():
+
+    # Test sequences
+    seqs = [
+        "ACGTACGTACGTACGTACGT",
+        "AAAAGGGGCCCC",
+        "ATCGATCGATCGATCGATCG",
+        "AGCTTTCGAAGCTTTCGAAGCTTTCGAA",
+        "CGTAGCTAGCTAGCTAGCTA",
+        "TTGACGTCGTAGCTAGCTAAGT",
+    ]
+
+    repeats = find_genomic_repeats(seqs)
+    print(repeats)
+
+    # tests for Statistical module 
     # Example sequences
     seq_1 = "ACGT" * 1000
     seq_2 = "GCTA" * 1000
