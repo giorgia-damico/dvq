@@ -1,4 +1,4 @@
-from .repeat_analysis import DNARepeatDetector, detect_earliest_repeat_position, repeat_onset_positions_multiprocess, variable_tandem_repeats_multiprocess
+from .repeat_analysis import find_genomic_repeats
 
 __all__ = [
     "find_genomic_repeats"
