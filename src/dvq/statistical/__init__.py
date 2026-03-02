@@ -7,6 +7,7 @@ from .deng_entropy import (
     deng_KL_divergence
 )
 from .KL_divergence import kl_divergence
+from .JS_divergence import js_divergence
 
 __all__ = [
     'average_kmer_jaccard_similarity',
@@ -17,5 +18,6 @@ __all__ = [
     'denq_entropy_generalised',
     'calculate_deng_entropies_multiprocess',
     'deng_KL_divergence',
-    'kl_divergence'
+    'kl_divergence',
+    'js_divergence'
 ]
